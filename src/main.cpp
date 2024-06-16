@@ -6,11 +6,15 @@
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
+#include <Servo.h>
 
 #include <lcd.h>
 #include <Button.h>
 #include <pins.h>
 #include <colors.h>
+
+#define OPEN_SRV_POS 1500
+#define CLOSE_SRV_POS 1000
 
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
@@ -18,8 +22,13 @@ Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 ScreenPoint screen_point = ScreenPoint(&ts, &tft);
 
-Button run_btn = Button(10, 10, 210, 70, "RUN", tColor::GREEN_COLOR, tColor::WHITE_COLOR);
-Button stop_btn = Button(10, 10, 210, 70, "STOP", tColor::RED_COLOR, tColor::WHITE_COLOR);
+Button open_btn = Button(10, 10, 210, 70, "OPEN", tColor::GREEN_COLOR, tColor::BLACK_COLOR);
+Button close_btn = Button(10, 90, 210, 70, "CLOSE", tColor::RED_COLOR, tColor::WHITE_COLOR);
+Button opnrls_btn = Button(10, 180, 210, 120, "DROP", tColor::YELLOW_COLOR, tColor::BLACK_COLOR);
+
+Servo srv;
+
+uint8_t open_release_state = 0;
 
 void setup(void) {
   Serial.begin(115200);
@@ -62,35 +71,39 @@ void setup(void) {
   tft.begin(identifier);
   tft.fillScreen(tColor::BLACK_COLOR);
   tft.setRotation(2);
-  tft.drawLine(5, 5, tft.width()-5, 5, tColor::GREEN_COLOR);
-  tft.drawLine(5, 5, 5, tft.height()-5, tColor::RED_COLOR);
-  tft.setCursor(50, 50);
-  tft.setTextColor(tColor::WHITE_COLOR, tColor::BLACK_COLOR);
-  tft.setTextSize(1);
-  run_btn.render(&tft);
+  open_btn.render(&tft);
+  close_btn.render(&tft);
+  opnrls_btn.render(&tft);
+
+  srv.attach(SRV_PIN);
+  srv.write(CLOSE_SRV_POS);
 }
 
 void loop(void) {
   tft.setCursor(0, 0);
-  if(screen_point.is_touched()){
+  if(
+    screen_point.is_touched()
+    && open_release_state == 0
+  ){
     screen_point.read_point();
-    if(run_btn.is_clicked(screen_point)) {
-      Serial.println("Run clicked");
-      run_btn.hide(&tft);
-      stop_btn.render(&tft);
-    } else if( stop_btn.is_clicked(screen_point)){
-      Serial.println("Stop clicked");
-      stop_btn.hide(&tft);
-      run_btn.render(&tft);
+    if( open_btn.is_clicked(screen_point)){
+      Serial.println("Open clicked");
+      srv.write(OPEN_SRV_POS);
+    } else if( close_btn.is_clicked(screen_point)){
+      Serial.println("Close clicked");
+      srv.write(CLOSE_SRV_POS);
+    } else if( opnrls_btn.is_clicked(screen_point)){
+      Serial.println("Single Drop");
+      srv.write(OPEN_SRV_POS);
+      open_release_state = 30;
     }
-    Serial.println(screen_point.z);
-    /*
-    char str[20];
-    sprintf(str, "X=%d, Y=%d", screen_point.x, screen_point.y);
-    tft.print(str);
-    */
-  } else{
-    tft.print("Not Touching");
+  } else {
+      if(
+        open_release_state
+        && --open_release_state == 0
+      ){
+        srv.write(CLOSE_SRV_POS);
+      }
   }
 
   delay(1000/50);
