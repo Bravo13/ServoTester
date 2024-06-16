@@ -29,4 +29,6 @@
 #define YM 9   // can be a digital pin
 #define XP 8   // can be a digital pin
 
+#define SRV_PIN A5
+
 #endif
