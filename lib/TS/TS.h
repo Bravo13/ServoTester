@@ -12,7 +12,7 @@
 #define TS_MINY 120
 #define TS_MAXY 910
 
-#define PRESS_MIN 150
+#define PRESS_MIN 130
 #define PRESS_DEBOUNSE_MS 50
 
 class ScreenPoint {
