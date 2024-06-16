@@ -16,7 +16,7 @@ Button::Button(int xPos, int yPos, int butWidth, int butHeight, char *butText, t
 void Button::render(Adafruit_TFTLCD *tft){
 	tft->fillRect(x,y,width,height, bgColor); // draw rectangle
 	tft->setCursor(x+5,y+5);
-	tft->setTextSize(2);
+	tft->setTextSize(5);
 	tft->setTextColor(textColor);
 	tft->print(text);
 	visible = true;
